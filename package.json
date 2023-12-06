@@ -4,12 +4,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "watch": "npx tsc -w"
+    "server": "npx live-server --port=5500 --open=dist",
+    "watch": "npx tsc -w",
+    "start": "concurrently \"npm run watch\" \"npm run server\""
   },
   "keywords": [],
   "author": "Otavio Henrique de Lima e Silva",
   "license": "ISC",
   "devDependencies": {
+    "concurrently": "^8.2.2",
+    "live-server": "^1.2.2",
     "typescript": "^5.3.2"
   }
 }
