@@ -1,4 +1,5 @@
 import { GrupoTransacao } from "./GrupoTransacao.js";
+import { ResumoTransacoes } from "./ResumoTransacoes.js";
 import { TipoTransacao } from "./TipoTransacao.js";
 import { Transacao } from "./Transacao.js";
 
@@ -8,14 +9,14 @@ const transacoes: Transacao[] = JSON.parse(localStorage.getItem("transacoes"), (
   if (key === "data") {
     return new Date(value);
   }
-  return value; 
+  return value;
 }) || [];
 
 function debitar(valor: number): void {
   if (valor <= 0) {
     throw new Error("O valor a ser debitado deve ser maior que zero!");
   }
-  
+
   if (valor > saldo) {
     throw new Error("Saldo insuficiente!");
   }
@@ -61,6 +62,7 @@ const Conta = {
   registrarTransacao(novaTransacao: Transacao) {
     if (novaTransacao.tipoTransacao === TipoTransacao.DEPOSITO) {
       depositar(novaTransacao.valor);
+      novaTransacao.valor *= -1;
     } else if (novaTransacao.tipoTransacao === TipoTransacao.TRANSFERENCIA || novaTransacao.tipoTransacao === TipoTransacao.PAGAMENTO_BOLETO) {
       debitar(novaTransacao.valor);
     } else {
@@ -70,8 +72,34 @@ const Conta = {
     transacoes.push(novaTransacao);
     console.log(this.getGrupoTransacoes());
     localStorage.setItem("transacoes", JSON.stringify
-    (transacoes));  
+      (transacoes));
+  },
+  agruparTransacoes(): ResumoTransacoes {
+    const resumo: ResumoTransacoes = {
+      totalDepositos: 0,
+      totalTransferencias: 0,
+      totalPagamentosBoleto: 0
+    };
+
+    this.transacoes.forEach(transacao => {
+      switch (transacao.tipoTransacao) {
+        case TipoTransacao.DEPOSITO:
+          resumo.totalDepositos += transacao.valor;
+          break;
+
+        case TipoTransacao.TRANSFERENCIA:
+          resumo.totalTransferencias += transacao.valor;
+          break;
+
+        case TipoTransacao.PAGAMENTO_BOLETO:
+          resumo.totalPagamentosBoleto += transacao.valor;
+          break;
+      }
+    });
+
+    return resumo;
   }
+
 };
 
 export default Conta;

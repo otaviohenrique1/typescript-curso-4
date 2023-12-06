@@ -30,9 +30,28 @@ const Conta = {
     getDataAcesso() {
         return new Date();
     },
+    getGrupoTransacoes() {
+        const gruposTransacoes = [];
+        const listaTransacoes = structuredClone(transacoes);
+        const transacoesOrdenadas = listaTransacoes.sort((t1, t2) => t2.data.getTime() - t1.data.getTime()); // Data mais recente para data mais antiga
+        let labelAtualGrupoTransacao = "";
+        for (const transacao of transacoesOrdenadas) {
+            let labelGrupoTransacao = transacao.data.toLocaleDateString("pt-br", { month: "long", year: "numeric" });
+            if (labelAtualGrupoTransacao !== labelGrupoTransacao) {
+                labelAtualGrupoTransacao = labelGrupoTransacao;
+                gruposTransacoes.push({
+                    label: labelGrupoTransacao,
+                    transacoes: [],
+                });
+            }
+            gruposTransacoes.at(-1).transacoes.push(transacao); // Adiciona no ultimo grupo
+        }
+        return gruposTransacoes;
+    },
     registrarTransacao(novaTransacao) {
         if (novaTransacao.tipoTransacao === TipoTransacao.DEPOSITO) {
             depositar(novaTransacao.valor);
+            novaTransacao.valor *= -1;
         }
         else if (novaTransacao.tipoTransacao === TipoTransacao.TRANSFERENCIA || novaTransacao.tipoTransacao === TipoTransacao.PAGAMENTO_BOLETO) {
             debitar(novaTransacao.valor);
@@ -41,8 +60,29 @@ const Conta = {
             throw new Error("Tipo de Transação é inválido!");
         }
         transacoes.push(novaTransacao);
-        console.log(novaTransacao);
+        console.log(this.getGrupoTransacoes());
         localStorage.setItem("transacoes", JSON.stringify(transacoes));
+    },
+    agruparTransacoes() {
+        const resumo = {
+            totalDepositos: 0,
+            totalTransferencias: 0,
+            totalPagamentosBoleto: 0
+        };
+        this.transacoes.forEach(transacao => {
+            switch (transacao.tipoTransacao) {
+                case TipoTransacao.DEPOSITO:
+                    resumo.totalDepositos += transacao.valor;
+                    break;
+                case TipoTransacao.TRANSFERENCIA:
+                    resumo.totalTransferencias += transacao.valor;
+                    break;
+                case TipoTransacao.PAGAMENTO_BOLETO:
+                    resumo.totalPagamentosBoleto += transacao.valor;
+                    break;
+            }
+        });
+        return resumo;
     }
 };
 export default Conta;
